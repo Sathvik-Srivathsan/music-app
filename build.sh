@@ -6,6 +6,11 @@
 # way compile-time String.fromEnvironment values can be reached in a web build).
 set -e
 
+# Make this script robust to whatever working directory Vercel starts the build
+# from: cd to the directory that actually contains this script.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Install Flutter (stable) into $HOME if not already present. `|| true` keeps
 # the clone idempotent across redeploys (the folder persists between builds).
 git clone --depth 1 https://github.com/flutter/flutter.git -b stable "$HOME/flutter" || true
