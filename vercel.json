@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": "bash build.sh",
+  "installCommand": "echo \"skip npm install; Flutter setup is handled inside build.sh\"",
+  "outputDirectory": "build/web"
+}

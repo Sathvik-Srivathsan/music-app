@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
 # Vercel build script for the Flutter web app.
-# Build Command in Vercel:  ./build.sh      (or:  bash build.sh)
+# Invoked by repository vercel.json:  "buildCommand": "bash build.sh"
 # Env vars SUPABASE_URL / SUPABASE_ANON_KEY come from Vercel Environment
 # Variables and are passed into the Flutter build as --dart-define (the only
 # way compile-time String.fromEnvironment values can be reached in a web build).
+#
+# Vercel makes its env vars available to any build command, so $SUPABASE_URL
+# and $SUPABASE_ANON_KEY are already set in this shell's environment at build
+# time. We simply forward them to --dart-define below.
 set -e
+
+# Fail fast with a clear message if the env vars did not reach the build step.
+if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+  echo "ERROR: SUPABASE_URL / SUPABASE_ANON_KEY are missing from the build environment."
+  echo "Add them in Vercel: Project -> Settings -> Environment Variables ->"
+  echo "SUPABASE_URL and SUPABASE_ANON_KEY (scoped to Production)."
+  exit 1
+fi
 
 # Make this script robust to whatever working directory Vercel starts the build
 # from: cd to the directory that actually contains this script.
