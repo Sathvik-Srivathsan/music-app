@@ -1,0 +1,3 @@
+# Force LF line endings for shell scripts so the shebang stays valid on Linux
+# build runners (Vercel) even when checked out on Windows with core.autocrlf.
+*.sh text eol=lf
