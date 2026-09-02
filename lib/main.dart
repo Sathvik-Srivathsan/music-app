@@ -15,15 +15,18 @@ void main() async {
   final device = kIsWeb ? 'web' : defaultTargetPlatform.name;
 
   await Supabase.initialize(
-    url: const String.fromEnvironment(
-      'SUPABASE_URL',
-      defaultValue: 'https://iqtrkvtwjapktzhnfiaz.supabase.co',
-    ),
-    anonKey: const String.fromEnvironment(
-      'SUPABASE_ANON_KEY',
-      defaultValue:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxdHJrdnR3amFwa3R6aG5maWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTE0NjksImV4cCI6MjA5MTcyNzQ2OX0.sFi9VE4XRO6EYdVKx6Uc3YNKttuOJY2ji62w2daXFrI',
-    ),
+    // The Supabase URL + anon key are injected at BUILD time via --dart-define.
+    // No literals are baked in here so a clone never silently points at a
+    // foreign production database. If they are missing, the Supabase SDK will
+    // fail at startup with a clear connection error.
+    //
+    //   flutter run -d chrome \
+    //     --dart-define=SUPABASE_URL=$SUPABASE_URL \
+    //     --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+    //
+    // (Vercel passes them to the build command the same way. See .env.example.)
+    url: const String.fromEnvironment('SUPABASE_URL'),
+    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
     // x-device is static per platform and is read by the audit-log trigger to
     // stamp every logged write with the device it originated from.
     headers: {'x-device': device},

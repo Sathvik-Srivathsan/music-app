@@ -1,10 +1,27 @@
 import 'dart:io';
 import 'dart:convert';
 
-const url = 'https://iqtrkvtwjapktzhnfiaz.supabase.co';
-const key =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxdHJrdnR3amFwa3R6aG5maWF6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTE0NjksImV4cCI6MjA5MTcyNzQ2OX0.sFi9VE4XRO6EYdVKx6Uc3YNKttuOJY2ji62w2daXFrI';
+// Credentials come from the environment only (no literals in the repo). Set
+// SUPABASE_URL and SUPABASE_ANON_KEY in your shell/.env before running:
+//   dart run tools/verify_hierarchy_counts.dart
+final String url = Platform.environment['SUPABASE_URL'] ?? '';
+final String key = Platform.environment['SUPABASE_ANON_KEY'] ?? '';
 const pageSize = 1000;
+
+void _requireEnv() {
+  final missing = <String>[
+    if (url.isEmpty) 'SUPABASE_URL',
+    if (key.isEmpty) 'SUPABASE_ANON_KEY',
+  ];
+  if (missing.isNotEmpty) {
+    stderr.writeln('ERROR: missing required env var(s): ${missing.join(', ')}');
+    stderr.writeln('Set them in your environment/.env before running, e.g.:');
+    stderr.writeln('  set SUPABASE_URL=https://<ref>.supabase.co');
+    stderr.writeln('  set SUPABASE_ANON_KEY=<anon-key>');
+    stderr.writeln('Then re-run this tool.');
+    exit(1);
+  }
+}
 
 Future<List<Map<String, dynamic>>> paginatedQuery(String table,
     {String select = '*', String? orderCol}) async {
@@ -44,6 +61,7 @@ Set<int> bfs(int start, Map<int, Set<int>> edges) {
 }
 
 void main() async {
+  _requireEnv();
   // --- GENRES ---
   final genreRows = await paginatedQuery('genres',
       select: 'genre_id,genre_name', orderCol: 'genre_name');
