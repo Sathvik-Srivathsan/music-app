@@ -2933,7 +2933,8 @@ INSERT INTO public.genres (genre_id, genre_name, ref_count, children_count, tota
   (2857, 'Chakacha', 0, 0, 0), -- LEAF
   (2858, 'Echtzeitmusik', 0, 0, 0), -- LEAF
   (2859, 'Pimp Rap', 0, 0, 0), -- LEAF
-  (2860, 'Sao Paulo Queer Underground', 0, 0, 0)  -- LEAF;
+  (2860, 'Sao Paulo Queer Underground', 0, 0, 0)  -- LEAF
+;
 
 
 -- =============================================================================
@@ -6514,7 +6515,8 @@ INSERT INTO public.genre_hierarchy (parent_genre_id, child_genre_id) VALUES
   (2816, 2817), -- Zouk  ->  Zouk Love
   (2818, 1831), -- Zydeco  ->  Nouveau zydeco
   (2820, 2265), -- Òrain Ghàidhlig  ->  Seinn nan salm
-  (2820, 2821)  -- Òrain Ghàidhlig  ->  Òrain luaidh;
+  (2820, 2821)  -- Òrain Ghàidhlig  ->  Òrain luaidh
+;
 
 
 -- =============================================================================
@@ -7068,7 +7070,8 @@ INSERT INTO public.descriptors (descriptor_id, descriptor_name, ref_count, child
   (544, 'Wordplay', 0, 0, 0), -- LEAF
   (545, 'Work', 0, 2, 0), -- 2 children
   (546, 'Wrestling', 0, 0, 0), -- LEAF
-  (547, 'Yarling', 0, 0, 0)  -- LEAF;
+  (547, 'Yarling', 0, 0, 0)  -- LEAF
+;
 
 
 -- =============================================================================
@@ -7534,7 +7537,8 @@ INSERT INTO public.descriptor_hierarchy (parent_descriptor_id, child_descriptor_
   (529, 539), -- Vocals  ->  Whistling
   (529, 547), -- Vocals  ->  Yarling
   (545, 175), -- Work  ->  Farming
-  (545, 313)  -- Work  ->  Mining;
+  (545, 313)  -- Work  ->  Mining
+;
 
 
 -- =============================================================================
