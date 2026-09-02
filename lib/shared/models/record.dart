@@ -3,6 +3,7 @@ class Record {
   final String recordName;
   final String? recordType;
   final String? releaseDate;
+  final int releaseDateMask;
   final String? dateAdded;
   final String? comments;
   final bool status;
@@ -12,6 +13,7 @@ class Record {
     required this.recordName,
     this.recordType,
     this.releaseDate,
+    this.releaseDateMask = 7,
     this.dateAdded,
     this.comments,
     this.status = false,
@@ -23,6 +25,7 @@ class Record {
       recordName: json['record_name'] as String,
       recordType: json['record_type'] as String?,
       releaseDate: json['release_date'] as String?,
+      releaseDateMask: json['release_date_mask'] as int? ?? 7,
       dateAdded: json['date_added'] as String?,
       comments: json['comments'] as String?,
       status: json['status'] as bool? ?? false,
@@ -35,6 +38,7 @@ class Record {
       'record_name': recordName,
       'record_type': recordType,
       'release_date': releaseDate,
+      'release_date_mask': releaseDateMask,
       'date_added': dateAdded,
       'comments': comments,
       'status': status,
@@ -46,6 +50,7 @@ class Record {
     String? recordName,
     String? recordType,
     String? releaseDate,
+    int? releaseDateMask,
     String? dateAdded,
     String? comments,
     bool? status,
@@ -55,6 +60,7 @@ class Record {
       recordName: recordName ?? this.recordName,
       recordType: recordType ?? this.recordType,
       releaseDate: releaseDate ?? this.releaseDate,
+      releaseDateMask: releaseDateMask ?? this.releaseDateMask,
       dateAdded: dateAdded ?? this.dateAdded,
       comments: comments ?? this.comments,
       status: status ?? this.status,

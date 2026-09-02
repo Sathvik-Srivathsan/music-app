@@ -666,7 +666,9 @@ class SearchProvider extends ChangeNotifier
       case 'descriptors':
         return r.descriptorsCsv.isEmpty ? '(none)' : r.descriptorsCsv;
       case 'releaseDate':
-        return r.record.releaseDate ?? '(unknown)';
+        return formatDisplayDate(
+                r.record.releaseDate, r.record.releaseDateMask) ??
+            '(unknown)';
       case 'type':
         return r.record.recordType ?? '(none)';
       case 'dateAdded':

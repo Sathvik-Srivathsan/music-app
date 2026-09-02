@@ -227,6 +227,7 @@ class SearchRepository {
       'record_name': details.record.recordName,
       'record_type': details.record.recordType,
       'release_date': details.record.releaseDate,
+      'release_date_mask': details.record.releaseDateMask,
       'comments': details.record.comments,
       'status': details.record.status,
     }).eq('record_id', id);

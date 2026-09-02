@@ -5,6 +5,7 @@ import 'package:music_collection/core/constants/app_constants.dart';
 import 'package:music_collection/core/utils/csv_utils.dart';
 import 'package:music_collection/core/utils/toast_utils.dart';
 import 'package:music_collection/features/insert/data/repositories/insert_repository.dart';
+import 'package:music_collection/features/search/domain/date_operator_logic.dart';
 import 'package:music_collection/core/logging/audit_outbox.dart';
 import 'package:music_collection/core/logging/record_audit_logger.dart';
 import 'package:music_collection/shared/models/artist.dart';
@@ -259,6 +260,15 @@ class InsertProvider extends ChangeNotifier {
     if (recordName.trim().isEmpty) {
       ToastUtils.showWarning('Record name is required');
       return false;
+    }
+
+    if (releaseDate != null && releaseDate!.trim().isNotEmpty) {
+      final canonical = canonicalizeReleaseDate(releaseDate);
+      if (canonical.iso == null) {
+        ToastUtils.showError(
+            'Invalid release date: "${releaseDate!.trim()}". Use DD-MM-YYYY, MM-YYYY, or YYYY.');
+        return false;
+      }
     }
 
     isSaving = true;

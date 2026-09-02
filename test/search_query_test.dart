@@ -100,6 +100,84 @@ void main() {
     });
   });
 
+  group('parseFlexibleDate missing-leading-zero tolerance', () {
+    test('accepts 1-2 digit day and month components', () {
+      expect(parseFlexibleDate('2-9-2026'), '2026-09-02');
+      expect(parseFlexibleDate('2-09-2026'), '2026-09-02');
+      expect(parseFlexibleDate('02-9-2026'), '2026-09-02');
+      expect(parseFlexibleDate('2026-9-2'), '2026-09-02');
+      expect(parseFlexibleDate('2026-09-2'), '2026-09-02');
+      expect(parseFlexibleDate('2026-9-02'), '2026-09-02');
+      expect(parseFlexibleDate('9-2026'), '2026-09');
+      expect(parseFlexibleDate('2026-9'), '2026-09');
+    });
+  });
+
+  group('canonicalizeReleaseDate + mask', () {
+    test('full date (day-first, missing zeros) -> ISO + mask 7', () {
+      expect(canonicalizeReleaseDate('2-9-2026'),
+          (iso: '2026-09-02', mask: 7));
+      expect(canonicalizeReleaseDate('05/07/2026'),
+          (iso: '2026-07-05', mask: 7));
+    });
+
+    test('year-first three part -> ISO + mask 7', () {
+      expect(canonicalizeReleaseDate('2026-9-2'),
+          (iso: '2026-09-02', mask: 7));
+    });
+
+    test('year-month -> ISO day 01 + mask 3', () {
+      expect(canonicalizeReleaseDate('09-2026'),
+          (iso: '2026-09-01', mask: 3));
+      expect(canonicalizeReleaseDate('2026-09'),
+          (iso: '2026-09-01', mask: 3));
+      expect(canonicalizeReleaseDate('9-2026'),
+          (iso: '2026-09-01', mask: 3));
+    });
+
+    test('year only -> ISO Jan 1 + mask 1', () {
+      expect(canonicalizeReleaseDate('2010'), (iso: '2010-01-01', mask: 1));
+    });
+
+    test('empty / invalid -> null iso + mask 0', () {
+      expect(canonicalizeReleaseDate(''), (iso: null, mask: 0));
+      expect(canonicalizeReleaseDate(null), (iso: null, mask: 0));
+      expect(canonicalizeReleaseDate('March 2020'), (iso: null, mask: 0));
+      expect(canonicalizeReleaseDate('13-2026'), (iso: null, mask: 0));
+    });
+
+    test('rejects impossible real-world dates', () {
+      expect(canonicalizeReleaseDate('2026-02-30'), (iso: null, mask: 0));
+      expect(canonicalizeReleaseDate('30-02-2026'), (iso: null, mask: 0));
+      expect(canonicalizeReleaseDate('2026-13-01'), (iso: null, mask: 0));
+    });
+
+    test('only valid masks are emitted (validity invariant)', () {
+      expect(canonicalizeReleaseDate('2010').mask, 1);
+      expect(canonicalizeReleaseDate('2010-05').mask, 3);
+      expect(canonicalizeReleaseDate('05-2010').mask, 3);
+      expect(canonicalizeReleaseDate('10-05-2010').mask, 7);
+      expect(canonicalizeReleaseDate('2010-05-10').mask, 7);
+    });
+  });
+
+  group('formatDisplayDate (granularity-preserving DD-MM-YYYY)', () {
+    test('mask 1 -> year only', () {
+      expect(formatDisplayDate('2010-01-01', 1), '2010');
+    });
+    test('mask 3 -> month-year', () {
+      expect(formatDisplayDate('2026-09-01', 3), '09-2026');
+    });
+    test('mask 7 -> full day-month-year', () {
+      expect(formatDisplayDate('2026-09-02', 7), '02-09-2026');
+    });
+    test('empty / unknown -> null', () {
+      expect(formatDisplayDate('2026-09-02', 0), isNull);
+      expect(formatDisplayDate('2026-09-02', 2), isNull);
+      expect(formatDisplayDate(null, 7), isNull);
+    });
+  });
+
   group('dateMatches operators', () {
     test('exact matches full normalized string', () {
       expect(

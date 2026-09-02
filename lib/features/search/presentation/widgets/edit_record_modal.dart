@@ -4,6 +4,7 @@ import 'package:music_collection/core/constants/app_colors.dart';
 import 'package:music_collection/core/constants/app_constants.dart';
 import 'package:music_collection/core/utils/toast_utils.dart';
 import 'package:music_collection/core/providers/search_results_provider.dart';
+import 'package:music_collection/features/search/domain/date_operator_logic.dart';
 import 'package:music_collection/features/insert/presentation/providers/insert_provider.dart';
 import 'package:music_collection/features/insert/presentation/widgets/streaming_availability_widget.dart';
 import 'package:music_collection/shared/models/artist.dart';
@@ -70,10 +71,7 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
     final r = widget.details.record;
     if (_nameCtrl.text.trim() != r.recordName) return true;
     if (_recordType != r.recordType) return true;
-    if ((_releaseCtrl.text.trim().isEmpty
-            ? null
-            : _releaseCtrl.text.trim()) !=
-        r.releaseDate) {
+    if (canonicalizeReleaseDate(_releaseCtrl.text).iso != r.releaseDate) {
       return true;
     }
     if ((_commentsCtrl.text.trim().isEmpty
@@ -130,7 +128,8 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
     super.initState();
     final r = widget.details.record;
     _nameCtrl = TextEditingController(text: r.recordName);
-    _releaseCtrl = TextEditingController(text: r.releaseDate ?? '');
+    _releaseCtrl =
+        TextEditingController(text: formatDisplayDate(r.releaseDate, r.releaseDateMask) ?? '');
     _commentsCtrl = TextEditingController(text: r.comments ?? '');
     _recordType = r.recordType;
     _statusActive = !r.status;
@@ -164,12 +163,13 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
   }
 
   RecordDetails _buildUpdated() {
+    final canonicalRelease = canonicalizeReleaseDate(_releaseCtrl.text);
     return RecordDetails(
       record: widget.details.record.copyWith(
         recordName: _nameCtrl.text.trim(),
         recordType: _recordType,
-        releaseDate:
-            _releaseCtrl.text.trim().isEmpty ? null : _releaseCtrl.text.trim(),
+        releaseDate: canonicalRelease.iso,
+        releaseDateMask: canonicalRelease.mask,
         comments: _commentsCtrl.text.trim().isEmpty
             ? null
             : _commentsCtrl.text.trim(),
@@ -192,6 +192,15 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
   }
 
   Future<void> _onUpdate() async {
+    final typedDate = _releaseCtrl.text.trim();
+    if (typedDate.isNotEmpty && canonicalizeReleaseDate(typedDate).iso == null) {
+      setState(() {
+        _saving = false;
+        _saveError =
+            'Invalid release date: "$typedDate". Use DD-MM-YYYY, MM-YYYY, or YYYY.';
+      });
+      return;
+    }
     setState(() {
       _saving = true;
       _saveError = null;

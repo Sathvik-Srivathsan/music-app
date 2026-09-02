@@ -8,6 +8,7 @@ import 'package:music_collection/core/utils/csv_utils.dart';
 import 'package:music_collection/features/insert/data/repositories/insert_repository.dart';
 import 'package:music_collection/features/search/data/repositories/search_repository.dart';
 import 'package:music_collection/features/search/domain/record_collation.dart';
+import 'package:music_collection/features/search/domain/date_operator_logic.dart';
 import 'package:music_collection/features/search/domain/search_query.dart';
 import 'package:music_collection/features/search/presentation/providers/search_provider.dart';
 import 'package:music_collection/shared/models/artist.dart';
@@ -220,7 +221,9 @@ class DatabaseProvider extends ChangeNotifier
       case 'descriptors':
         return r.descriptorsCsv;
       case 'releaseDate':
-        return r.record.releaseDate ?? '';
+        return formatDisplayDate(
+                r.record.releaseDate, r.record.releaseDateMask) ??
+            '';
       case 'dateAdded':
         return r.record.dateAdded ?? '';
       case 'type':

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_collection/core/constants/app_colors.dart';
 import 'package:music_collection/core/providers/search_results_provider.dart';
+import 'package:music_collection/features/search/domain/date_operator_logic.dart';
 import 'package:music_collection/features/search/domain/search_query.dart';
 import 'package:music_collection/features/search/presentation/providers/search_provider.dart';
 import 'package:music_collection/features/search/presentation/widgets/edit_record_modal.dart';
@@ -1035,7 +1036,9 @@ class _ResultsTableState extends State<_ResultsTable> {
       case 'descriptors':
         return r.descriptorsCsv;
       case 'releaseDate':
-        return r.record.releaseDate ?? '';
+        return formatDisplayDate(
+                r.record.releaseDate, r.record.releaseDateMask) ??
+            '';
       case 'type':
         return r.record.recordType ?? '';
       case 'dateAdded':

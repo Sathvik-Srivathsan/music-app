@@ -1,5 +1,6 @@
 import 'package:music_collection/core/constants/app_constants.dart';
 import 'package:music_collection/core/network/supabase_client.dart';
+import 'package:music_collection/features/search/domain/date_operator_logic.dart';
 import 'package:music_collection/shared/models/artist.dart';
 import 'package:music_collection/shared/models/genre.dart';
 import 'package:music_collection/shared/models/descriptor.dart';
@@ -113,12 +114,14 @@ class InsertRepository {
     final dateAdded =
         '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
 
+    final canonical = canonicalizeReleaseDate(releaseDate);
     final data = await SupabaseService.fromWithContext(
             AppConstants.tableRecords, originTab)
         .insert({
           'record_name': recordName,
           'record_type': recordType,
-          'release_date': releaseDate,
+          'release_date': canonical.iso,
+          'release_date_mask': canonical.mask,
           'comments': comments,
           'status': status,
           'date_added': dateAdded,
