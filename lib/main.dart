@@ -7,6 +7,7 @@ import 'package:music_collection/app.dart';
 import 'package:music_collection/core/constants/app_constants.dart';
 import 'package:music_collection/core/logging/audit_outbox.dart';
 import 'package:music_collection/core/logging/audit_reconciler.dart';
+import 'package:music_collection/core/network/anon_http_client.dart';
 import 'package:music_collection/core/network/supabase_client.dart';
 
 void main() async {
@@ -32,6 +33,11 @@ void main() async {
     // x-device is static per platform and is read by the audit-log trigger to
     // stamp every logged write with the device it originated from.
     headers: {'x-device': device},
+    // The publishable key (sb_publishable_...) is not a JWT, so it must never
+    // be sent as `Authorization: Bearer`. This app is anonymous (no user JWT),
+    // so stripping that header leaves auth to the `apikey` header alone, which
+    // is the supported shape for new-format keys. See PublishableKeyHttpClient.
+    httpClient: PublishableKeyHttpClient(),
   );
 
   await _logAppBoot(device);
