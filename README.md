@@ -64,6 +64,39 @@ Vercel injects the values via `build.sh`). If neither is available the Supabase
 SDK fails at startup with a clear connection error (expected — never connect to
 a foreign DB by default).
 
+### Authentication (owner-only GitHub sign-in)
+
+The app gates on **one-click GitHub OAuth** (owner-only). Access is enforced at
+two complementary layers:
+
+- **Client gate (`lib/core/auth/`):** `AuthProvider` listens to Supabase auth
+  state. Until the owner signs in, the router redirects to `/login`, which shows
+  a single **"Login through GitHub"** button. On a rejected account a red
+  **"Access denied"** message appears and the user may retry.
+- **Server gate (Supabase Dashboard, NOT in the repo):** the
+  `before-user-created` Auth Hook (a Postgres function created in the Dashboard)
+  rejects any GitHub account that is not the configured owner (403). The owner
+  is identified by the **GitHub `provider_id`** (the `sub` in `identity_data`),
+  never by email/username. The owner id lives **only** in the Dashboard
+  function — it is intentionally not committed.
+
+Auth wiring notes (developer-relevant):
+
+- `supabase_flutter 2.16` enables **PKCE** and **session persistence** by
+  default; no custom `authOptions` are passed. The SDK restores the session on
+  relaunch and re-injects the user JWT.
+- OAuth uses the **Site URL** as the callback (redirectTo is omitted on web), so
+  the Dashboard's **URL Configuration → Site URL** must point at the deployed
+  app (e.g. `https://<your-app>.vercel.app`) and that origin must be in the
+  **Redirect URLs** list.
+- When signed in, requests carry the user's JWT. `PublishableKeyHttpClient`
+  (`lib/core/network/anon_http_client.dart`) strips only the **non-JWT**
+  publishable key from `Authorization` and never touches real JWTs, so
+  anonymous reads remain `apikey`-only while authenticated requests keep their
+  session token.
+- The Dashboard steps (GitHub provider, URL config, `before-user-created`
+  hook) are documented in `phase 6 deployment/PHASE6_DEPLOYMENT_TECHNICAL_DOCUMENTATION.txt`.
+
 ### CLI tools
 
 The `tools/*.dart` scripts read `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`

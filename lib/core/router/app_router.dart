@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music_collection/core/auth/auth_provider.dart';
+import 'package:music_collection/core/auth/login_screen.dart';
 import 'package:music_collection/features/insert/presentation/screens/insert_screen.dart';
 import 'package:music_collection/features/search/presentation/screens/search_screen.dart';
 import 'package:music_collection/features/database/presentation/screens/database_screen.dart';
@@ -10,11 +12,32 @@ class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-  static final router = GoRouter(
-    initialLocation: '/insert',
-    navigatorKey: _rootNavigatorKey,
-    routes: [
-      ShellRoute(
+  static GoRouter router(AuthProvider auth) => GoRouter(
+        // Re-evaluate the guard whenever auth state changes (signed in, signed
+        // out, or an "Access denied" rejection arrives).
+        refreshListenable: auth,
+        initialLocation: '/login',
+        navigatorKey: _rootNavigatorKey,
+        redirect: (context, state) {
+          final status = auth.status;
+          final location = state.matchedLocation;
+          final isLogin = location == '/login';
+
+          if (status == AuthStatus.authenticated) {
+            // Signed in: never land on /login; go to the default tab.
+            return isLogin ? '/insert' : null;
+          }
+          // Not authenticated (loading / unauthenticated / denied): only the
+          // login screen is reachable. "denied" keeps the user on /login with
+          // the "Access denied" message so they can retry.
+          return isLogin ? null : '/login';
+        },
+        routes: [
+          GoRoute(
+            path: '/login',
+            builder: (context, state) => const LoginScreen(),
+          ),
+          ShellRoute(
         navigatorKey: _shellNavigatorKey,
         // The shell ignores the routed child and hosts its own
         // long-lived tab stack (see _ScaffoldWithNavBarState).
