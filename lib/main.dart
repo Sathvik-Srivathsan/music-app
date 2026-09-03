@@ -15,18 +15,20 @@ void main() async {
   final device = kIsWeb ? 'web' : defaultTargetPlatform.name;
 
   await Supabase.initialize(
-    // The Supabase URL + anon key are injected at BUILD time via --dart-define.
-    // No literals are baked in here so a clone never silently points at a
-    // foreign production database. If they are missing, the Supabase SDK will
-    // fail at startup with a clear connection error.
+    // The Supabase URL + publishable key (formerly "anon" key) are injected at
+    // BUILD time via --dart-define. No literals are baked in here so a clone
+    // never silently points at a foreign production database. If they are
+    // missing, the Supabase SDK will fail at startup with a clear error.
     //
     //   flutter run -d chrome \
     //     --dart-define=SUPABASE_URL=$SUPABASE_URL \
-    //     --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+    //     --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
     //
     // (Vercel passes them to the build command the same way. See .env.example.)
     url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+    // publishableKey renamed from the deprecated anonKey; the publishable (anon)
+    // key is used for client-side apps and is safe to ship. Never the secret key.
+    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
     // x-device is static per platform and is read by the audit-log trigger to
     // stamp every logged write with the device it originated from.
     headers: {'x-device': device},

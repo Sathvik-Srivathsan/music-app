@@ -25,21 +25,21 @@ import 'dart:convert';
 import 'dart:io';
 
 // Credentials come from the environment only (no literals in the repo). Set
-// SUPABASE_URL and SUPABASE_ANON_KEY in your shell/.env before running:
+// SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in your shell/.env before running:
 //   dart run tools/verify_audit_log.dart
 final String url = Platform.environment['SUPABASE_URL'] ?? '';
-final String key = Platform.environment['SUPABASE_ANON_KEY'] ?? '';
+final String key = Platform.environment['SUPABASE_PUBLISHABLE_KEY'] ?? '';
 
 void _requireEnv() {
   final missing = <String>[
     if (url.isEmpty) 'SUPABASE_URL',
-    if (key.isEmpty) 'SUPABASE_ANON_KEY',
+    if (key.isEmpty) 'SUPABASE_PUBLISHABLE_KEY',
   ];
   if (missing.isNotEmpty) {
     stderr.writeln('ERROR: missing required env var(s): ${missing.join(', ')}');
     stderr.writeln('Set them in your environment/.env before running, e.g.:');
     stderr.writeln('  set SUPABASE_URL=https://<ref>.supabase.co');
-    stderr.writeln('  set SUPABASE_ANON_KEY=<anon-key>');
+    stderr.writeln('  set SUPABASE_PUBLISHABLE_KEY=<publishable-key>');
     stderr.writeln('Then re-run this tool.');
     exit(1);
   }
