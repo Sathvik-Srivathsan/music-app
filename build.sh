@@ -36,6 +36,15 @@ export PATH="$PATH:$HOME/flutter/bin:$HOME/flutter/bin/cache/dart-sdk/bin"
 flutter config --no-analytics
 flutter pub get
 
+# Regenerate .env from the build-time env vars so the bundled `.env` asset
+# always exists (the app reads it at runtime). Vercel's runner is a clean clone
+# without the git-ignored .env; local devs get theirs from their own checkout.
+# This is why `flutter run -d chrome` needs no --dart-define flags.
+cat > .env <<ENVEOF
+SUPABASE_URL=$SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
+ENVEOF
+
 flutter build web --release \
   --dart-define=SUPABASE_URL="$SUPABASE_URL" \
   --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"

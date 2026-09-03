@@ -8,6 +8,7 @@ import 'package:music_collection/core/constants/app_constants.dart';
 import 'package:music_collection/core/logging/audit_outbox.dart';
 import 'package:music_collection/core/logging/audit_reconciler.dart';
 import 'package:music_collection/core/network/anon_http_client.dart';
+import 'package:music_collection/core/network/app_env.dart';
 import 'package:music_collection/core/network/supabase_client.dart';
 
 void main() async {
@@ -15,21 +16,19 @@ void main() async {
 
   final device = kIsWeb ? 'web' : defaultTargetPlatform.name;
 
+  // Resolve the Supabase URL + publishable key. `AppEnv` checks compile-time
+  // --dart-define first (how Vercel injects values) and falls back to the
+  // bundled `.env` file read at runtime, so a plain `flutter run -d chrome`
+  // with a local `.env` works with zero extra flags.
+  await AppEnv.ensureLoaded();
+  final url = AppEnv.supabaseUrl;
+  final publishableKey = AppEnv.publishableKey;
+
   await Supabase.initialize(
-    // The Supabase URL + publishable key (formerly "anon" key) are injected at
-    // BUILD time via --dart-define. No literals are baked in here so a clone
-    // never silently points at a foreign production database. If they are
-    // missing, the Supabase SDK will fail at startup with a clear error.
-    //
-    //   flutter run -d chrome \
-    //     --dart-define=SUPABASE_URL=$SUPABASE_URL \
-    //     --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
-    //
-    // (Vercel passes them to the build command the same way. See .env.example.)
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    // publishableKey renamed from the deprecated anonKey; the publishable (anon)
-    // key is used for client-side apps and is safe to ship. Never the secret key.
-    publishableKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
+    // The publishable (formerly "anon") key is used for client-side apps and is
+    // safe to ship to the browser. Never use the secret/service_role key here.
+    url: url ?? '',
+    publishableKey: publishableKey ?? '',
     // x-device is static per platform and is read by the audit-log trigger to
     // stamp every logged write with the device it originated from.
     headers: {'x-device': device},

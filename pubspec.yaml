@@ -62,8 +62,15 @@ flutter:
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
-  # the material Icons class.
+  # the Material Icons class.
   uses-material-design: true
+
+  # The app reads its Supabase URL + publishable key from this file at
+  # runtime so a plain `flutter run -d chrome` (no --dart-define flags) works.
+  # The real .env is git-ignored; build.sh regenerates it on Vercel's clean
+  # runner from the build-time env vars, so the asset always exists at build time.
+  assets:
+    - .env
 
   # To add assets to your application, add an assets section, like this:
   # assets:

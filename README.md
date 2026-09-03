@@ -28,9 +28,10 @@ is deployed to Vercel.
 
 ## Configuration (no secrets in the repo)
 
-The Supabase URL and publishable key are **never hardcoded**. They are injected
-at **build time** via `--dart-define` (see `lib/main.dart`). This keeps a fresh
-clone from silently pointing at someone else's production database.
+The Supabase URL and publishable key are **never hardcoded**. They are read
+from `.env` at runtime, or injected at **build time** via `--dart-define`
+(which `build.sh` uses on Vercel). This keeps a fresh clone from silently
+pointing at someone else's production database.
 
 Reference a copy of the expected keys in `.env.example`. Fill real values into
 `.env` (git-ignored) or your shell / CI / Vercel.
@@ -52,13 +53,16 @@ SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 
 ```bash
 flutter pub get
-flutter run -d chrome \
-  --dart-define=SUPABASE_URL=$SUPABASE_URL \
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY
+flutter run -d chrome
 ```
 
-If the defines are missing the Supabase SDK fails at startup with a clear
-connection error (expected — never connect to a foreign DB by default).
+**No `--dart-define` flags needed.** The app reads `SUPABASE_URL` /
+`SUPABASE_PUBLISHABLE_KEY` from your local `.env`, which is bundled into the
+web build as an asset and loaded at runtime (`lib/core/network/app_env.dart`).
+A compile-time `--dart-define` still takes precedence when present (that is how
+Vercel injects the values via `build.sh`). If neither is available the Supabase
+SDK fails at startup with a clear connection error (expected — never connect to
+a foreign DB by default).
 
 ### CLI tools
 
@@ -115,12 +119,15 @@ auto-deploy.
   - Self-locates its own directory (robust to whatever CWD Vercel uses).
   - Idempotently installs Flutter stable (`git clone ... || true`) and adds it
     to `PATH`.
-  - Runs `flutter pub get`, then `flutter build web --release` passing the
-    config through as:
+  - Runs `flutter pub get`, writes a fresh `.env` from `$SUPABASE_URL` /
+    `$SUPABASE_PUBLISHABLE_KEY`, then runs `flutter build web --release`.
+  - The build forwards the config through both the generated `.env` (bundled and
+    read at runtime by `lib/core/network/app_env.dart`) and
     `--dart-define=SUPABASE_URL="$SUPABASE_URL"`
     `--dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"`.
-  - The `--dart-define` values are the only way `String.fromEnvironment` in
-    `lib/main.dart` can read compile-time values in a web build.
+  - This is why a fresh clone / Vercel build always has the config: the clean
+    runner has no git-ignored `.env`, so `build.sh` regenerates it from the
+    build-time env vars.
 - **`.gitattributes`** forces `*.sh` to LF so `build.sh`'s shebang stays valid
   on the Linux runner.
 
