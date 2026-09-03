@@ -53,7 +53,8 @@ class AuthProvider extends ChangeNotifier {
     if (state.session != null ||
         state.event == AuthChangeEvent.signedIn) {
       _setStatus(AuthStatus.authenticated);
-    } else if (state.event == AuthChangeEvent.signedOut) {
+    } else if (state.event == AuthChangeEvent.signedOut ||
+        state.event == AuthChangeEvent.initialSession) {
       _setStatus(AuthStatus.unauthenticated);
     }
     // InitialSession with a null session stays unauthenticated; denied is
