@@ -1,4 +1,4 @@
-# music_collection
+# MUSIC APP
 
 A Flutter music collection manager. Users maintain a catalogue of records
 (albums/releases), linked to artists, genres, and descriptors. The app talks
