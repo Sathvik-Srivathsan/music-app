@@ -75,16 +75,27 @@ class _DatabaseScreenState extends State<DatabaseScreen> {
           );
         }
 
-        return Column(
-          children: [
-            _buildSearchBar(context, db),
-            Expanded(
-              child: ChangeNotifierProvider<SearchResultsProvider>.value(
-                value: db,
-                child: SearchResultsView(originTab: 'db'),
+        return SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildSearchBar(context, db),
+              Expanded(
+                child: ChangeNotifierProvider<SearchResultsProvider>.value(
+                  value: db,
+                  child: SearchResultsView(
+                    originTab: 'db',
+                    onRefresh: db.isLoading
+                        ? null
+                        : () {
+                            db.loadAllRecords();
+                            db.loadEntities();
+                          },
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -96,16 +107,6 @@ class _DatabaseScreenState extends State<DatabaseScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Row(
         children: [
-          const Text(
-            'DATABASE',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: TextField(
               controller: _searchCtrl,
@@ -138,17 +139,6 @@ class _DatabaseScreenState extends State<DatabaseScreen> {
             const SizedBox(width: 8),
             _buildFilterDropdown(db),
           ],
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Refresh database',
-            onPressed: db.isLoading
-                ? null
-                : () {
-                    db.loadAllRecords();
-                    db.loadEntities();
-                  },
-            icon: const Icon(Icons.refresh, color: AppColors.electricBlue),
-          ),
         ],
       ),
     );

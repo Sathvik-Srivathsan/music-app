@@ -204,23 +204,27 @@ class _ManageScreenState extends State<ManageScreen> {
           );
         }
 
-        return Column(
-          children: [
-            _buildSubTabBar(manage),
-            if (manage.subTab != ManageSubTab.importExport) ...[
-              if (manage.view == ManageView.table) ...[
-                _buildTreeButton(manage),
-                _buildToolbar(manage),
+        return SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildSubTabBar(manage),
+              if (manage.subTab != ManageSubTab.importExport) ...[
+                if (manage.view == ManageView.table) ...[
+                  _buildTreeButton(manage),
+                  _buildSearchBar(manage),
+                  _buildActionsRow(manage),
+                ],
+                Expanded(
+                  child: manage.view == ManageView.table
+                      ? _buildTable(manage)
+                      : _buildTree(manage),
+                ),
+              ] else ...[
+                const Expanded(child: ManageImportExportScreen()),
               ],
-              Expanded(
-                child: manage.view == ManageView.table
-                    ? _buildTable(manage)
-                    : _buildTree(manage),
-              ),
-            ] else ...[
-              const Expanded(child: ManageImportExportScreen()),
             ],
-          ],
+          ),
         );
       },
     );
@@ -273,9 +277,9 @@ class _ManageScreenState extends State<ManageScreen> {
     );
   }
 
-  Widget _buildToolbar(ManageProvider manage) {
+  Widget _buildSearchBar(ManageProvider manage) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(24, 6, 24, 0),
       child: Row(
         children: [
           Expanded(
@@ -308,7 +312,16 @@ class _ManageScreenState extends State<ManageScreen> {
             ),
           ),
           const InfoTip(body: _searchInfo),
-          const SizedBox(width: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionsRow(ManageProvider manage) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      child: Row(
+        children: [
           IconButton(
             tooltip: 'Refresh',
             onPressed: manage.isLoading ? null : () => manage.loadAll(),
@@ -326,6 +339,7 @@ class _ManageScreenState extends State<ManageScreen> {
             onPressed: _onAdd,
           ),
           InfoTip(body: _addInfo(manage.subTab)),
+          const Spacer(),
         ],
       ),
     );

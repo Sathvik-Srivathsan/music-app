@@ -26,9 +26,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final stats = context.read<StatisticsProvider>();
     final tickerEnabled = TickerMode.valuesOf(context).enabled;
     // Refresh each time the tab becomes active (TickerMode flips on).
+    // Deferred to the next frame so notifyListeners() never runs during build
+    // (which otherwise triggers a second rebuild of the whole tab in the same
+    // frame - extra work on low-end devices).
     if (tickerEnabled && !_wasTickerEnabled) {
-      stats.load();
-      if (stats.subTab == StatisticsSubTab.log) stats.loadLogs();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        stats.load();
+        if (stats.subTab == StatisticsSubTab.log) stats.loadLogs();
+      });
     }
     if (!tickerEnabled && _wasTickerEnabled) {
       _wasLogActive = false;
@@ -101,7 +107,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         onRetry: () => stats.load(),
       );
     }
-    return StatisticsChartsView(provider: stats);
+    return RepaintBoundary(child: StatisticsChartsView(provider: stats));
   }
 }
 

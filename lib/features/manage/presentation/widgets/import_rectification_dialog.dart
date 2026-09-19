@@ -152,7 +152,6 @@ class _ImportRectificationDialogState
 
               TextField(
                 controller: _searchCtrl,
-                autofocus: true,
                 decoration: const InputDecoration(
                   hintText: 'Search for replacement...',
                 ),

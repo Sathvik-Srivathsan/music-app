@@ -229,7 +229,9 @@ class _InsertScreenState extends State<InsertScreen> {
                     color: AppColors.electricBlue,
                   ),
                 )
-              : SingleChildScrollView(
+              : SafeArea(
+                  bottom: false,
+                  child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -589,6 +591,7 @@ class _InsertScreenState extends State<InsertScreen> {
                       const SizedBox(height: 24),
                     ],
                   ),
+                ),
                 ),
         );
       },

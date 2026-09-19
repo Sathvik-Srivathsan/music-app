@@ -102,11 +102,23 @@ class _LogTable extends StatefulWidget {
 
 class _LogTableState extends State<_LogTable> {
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _bodyH = ScrollController();
+  final ScrollController _headerH = ScrollController();
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _bodyH.dispose();
+    _headerH.dispose();
     super.dispose();
+  }
+
+  /// Keeps the header row's horizontal offset in lock-step with the body so
+  /// dragging one always moves the other.
+  void _syncHeader(ScrollMetrics metrics) {
+    if (_headerH.hasClients && _headerH.offset != metrics.pixels) {
+      _headerH.jumpTo(metrics.pixels);
+    }
   }
 
   static const List<_Col> _cols = [
@@ -120,39 +132,65 @@ class _LogTableState extends State<_LogTable> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          SizedBox(
-            height: _LogTable._headerH,
-            child: Row(
-              children: [
-                for (final col in _cols) _headerCell(col),
-              ],
-            ),
+    const minTableWidth = 700.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalW = constraints.maxWidth > minTableWidth
+            ? constraints.maxWidth
+            : minTableWidth;
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(6),
           ),
-          Expanded(
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              interactive: true,
-              child: ListView.builder(
-                controller: _scrollController,
-                itemCount: widget.logs.length,
-                itemBuilder: (context, index) {
-                  final log = widget.logs[index];
-                  return _bodyRow(context, log, index);
-                },
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              SingleChildScrollView(
+                controller: _headerH,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: totalW,
+                  height: _LogTable._headerH,
+                  child: Row(
+                    children: [
+                      for (final col in _cols) _headerCell(col),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                child: NotificationListener<ScrollUpdateNotification>(
+                  onNotification: (n) {
+                    _syncHeader(n.metrics);
+                    return false;
+                  },
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: true,
+                    interactive: true,
+                    child: SingleChildScrollView(
+                      controller: _bodyH,
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: totalW,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: widget.logs.length,
+                          itemBuilder: (context, index) {
+                            final log = widget.logs[index];
+                            return _bodyRow(context, log, index);
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

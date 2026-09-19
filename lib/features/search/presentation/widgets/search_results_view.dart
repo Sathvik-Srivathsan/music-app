@@ -28,8 +28,14 @@ class _Item {
 
 class SearchResultsView extends StatelessWidget {
   final VoidCallback? onBackToSearch;
+  final VoidCallback? onRefresh;
   final String originTab;
-  const SearchResultsView({super.key, this.onBackToSearch, this.originTab = 'search'});
+  const SearchResultsView({
+    super.key,
+    this.onBackToSearch,
+    this.onRefresh,
+    this.originTab = 'search',
+  });
 
   static const _masterCols = [
     _Col('name', 'Record Name'),
@@ -131,6 +137,12 @@ class SearchResultsView extends StatelessWidget {
             selectedBackgroundColor: AppColors.electricBlue,
           ),
         ),
+        if (onRefresh != null)
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh, color: AppColors.electricBlue),
+          ),
         if (!p.hideShowColumns)
           _ColumnsPickerButton(provider: p, masterCols: _masterCols),
         DropdownButton<String>(
@@ -715,14 +727,8 @@ class _ResultsTableState extends State<_ResultsTable> {
   ScrollController? _rightCtrl;
   ScrollController? _hCtrl;
 
-  double _lastTableWidth = 0;
-  double _lastColW = 0;
-  List<String> _prevLeftCols = const [];
-  List<String> _prevRightCols = const [];
-
   @override
   void dispose() {
-    _hCtrl?.removeListener(_onHScroll);
     _rightCtrl?.dispose();
     _hCtrl?.dispose();
     super.dispose();
@@ -731,56 +737,7 @@ class _ResultsTableState extends State<_ResultsTable> {
   void _ensureControllers() {
     if (_rightCtrl != null) return;
     _rightCtrl = ScrollController();
-    _hCtrl = ScrollController()..addListener(_onHScroll);
-  }
-
-  void _onHScroll() {
-    if (!mounted) return;
-    if (_lastTableWidth == 0) return;
-    final cols = widget.cols;
-    if (cols.length <= 5) return;
-    final hOffset =
-        _hCtrl?.hasClients == true ? _hCtrl!.offset : 0.0;
-    final left = <String>[];
-    final right = <String>[];
-    for (var i = 0; i < cols.length; i++) {
-      final colStart = i * _lastColW;
-      if (colStart < hOffset - 0.5) left.add(cols[i].label);
-      if (colStart >= hOffset + _lastTableWidth - 0.5) {
-        right.add(cols[i].label);
-      }
-    }
-    if (left.length == _prevLeftCols.length &&
-        right.length == _prevRightCols.length &&
-        _listEquals(left, _prevLeftCols) &&
-        _listEquals(right, _prevRightCols)) {
-      return;
-    }
-    _prevLeftCols = left;
-    _prevRightCols = right;
-    setState(() {});
-  }
-
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (identical(a, b)) return true;
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  @override
-  void didUpdateWidget(covariant _ResultsTable old) {
-    super.didUpdateWidget(old);
-    if (!identical(widget.items, old.items) ||
-        !identical(widget.cols, old.cols)) {
-      _prevLeftCols = const [];
-      _prevRightCols = const [];
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() {});
-      });
-    }
+    _hCtrl = ScrollController();
   }
 
   @override
@@ -793,26 +750,10 @@ class _ResultsTableState extends State<_ResultsTable> {
     return LayoutBuilder(builder: (context, cons) {
       final tableWidth = cons.maxWidth;
       final n = cols.length;
-      final colW = tableWidth / (n < 5 ? n : 5).toDouble();
-      final scrollable = n > 5;
-      _lastTableWidth = tableWidth;
-      _lastColW = colW;
-
-      final leftColNames = <String>[];
-      final rightColNames = <String>[];
-      if (scrollable) {
-        final hOffset =
-            _hCtrl?.hasClients == true ? _hCtrl!.offset : 0.0;
-        for (var i = 0; i < cols.length; i++) {
-          final colStart = i * colW;
-          if (colStart < hOffset - 0.5) {
-            leftColNames.add(cols[i].label);
-          }
-          if (colStart >= hOffset + tableWidth - 0.5) {
-            rightColNames.add(cols[i].label);
-          }
-        }
-      }
+      const minColW = 150.0;
+      final base = n == 0 ? tableWidth : tableWidth / n;
+      final colW = base < minColW ? minColW : base;
+      final scrollable = n > 0 && colW * n > tableWidth + 0.5;
 
       final dataPane = scrollable
           ? _scrollableDataPane(cols, items, colW, p)
@@ -820,38 +761,6 @@ class _ResultsTableState extends State<_ResultsTable> {
 
       return Column(
         children: [
-          if (scrollable &&
-              (leftColNames.isNotEmpty || rightColNames.isNotEmpty))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  if (leftColNames.isNotEmpty)
-                    _ScrollPill(
-                      label: '← ${leftColNames.join(', ')}',
-                      onTap: () {
-                        _hCtrl?.animateTo(
-                          0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                    ),
-                  const Spacer(),
-                  if (rightColNames.isNotEmpty)
-                    _ScrollPill(
-                      label: '${rightColNames.join(', ')} →',
-                      onTap: () {
-                        _hCtrl?.animateTo(
-                          _hCtrl!.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -879,6 +788,7 @@ class _ResultsTableState extends State<_ResultsTable> {
           child: Scrollbar(
             controller: _hCtrl,
             thumbVisibility: true,
+            interactive: true,
             child: ScrollConfiguration(
               behavior:
                   ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -1122,7 +1032,7 @@ class _ResultsTableState extends State<_ResultsTable> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                        color: AppColors.textPrimary, fontSize: 12)),
+                        color: AppColors.textPrimary, fontSize: 11)),
               ),
             ],
           )
@@ -1136,7 +1046,7 @@ class _ResultsTableState extends State<_ResultsTable> {
                     ? TextAlign.right
                     : TextAlign.left,
                 style: const TextStyle(
-                    color: AppColors.textPrimary, fontSize: 12)),
+                    color: AppColors.textPrimary, fontSize: 11)),
           );
     return Expanded(
       child: Container(
@@ -1154,42 +1064,6 @@ class _ResultsTableState extends State<_ResultsTable> {
                 ? Alignment.centerRight
                 : Alignment.centerLeft),
         child: child,
-      ),
-    );
-  }
-}
-
-// ── Scroll indicator pill ────────────────────────────────────────
-
-class _ScrollPill extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  const _ScrollPill({required this.label, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor:
-          onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.card.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(10),
-            border:
-                Border.all(color: AppColors.electricBlue, width: 1),
-          ),
-          child: Text(
-            label,
-            style: const TextStyle(
-                color: AppColors.electricBlue,
-                fontSize: 11,
-                fontWeight: FontWeight.w600),
-          ),
-        ),
       ),
     );
   }

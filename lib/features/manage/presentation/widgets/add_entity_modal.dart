@@ -230,7 +230,6 @@ class _AddEntityModalState extends State<_AddEntityModal> {
 
               TextField(
                 controller: _inputCtrl,
-                autofocus: true,
                 decoration: const InputDecoration(
                   hintText: 'Enter name...',
                 ),

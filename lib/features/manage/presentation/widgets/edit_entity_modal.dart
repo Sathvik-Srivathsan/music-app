@@ -416,7 +416,6 @@ class _EditEntityModalState extends State<_EditEntityModal> {
                   const SizedBox(height: 6),
                   TextField(
                     controller: _nameCtrl,
-                    autofocus: true,
                     decoration: const InputDecoration(
                       hintText: 'Enter name...',
                     ),

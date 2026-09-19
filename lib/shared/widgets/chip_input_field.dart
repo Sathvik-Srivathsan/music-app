@@ -572,7 +572,7 @@ class _ChipInputFieldState<T extends Object> extends State<ChipInputField<T>> {
                             color: highlighted
                                 ? AppColors.electricBlue
                                 : AppColors.textPrimary,
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: highlighted
                                 ? FontWeight.w600
                                 : FontWeight.w400,
@@ -629,7 +629,7 @@ class _ChipInputFieldState<T extends Object> extends State<ChipInputField<T>> {
         text: widget.itemToString(item),
         style: const TextStyle(
           color: AppColors.textPrimary,
-          fontSize: 15,
+          fontSize: 13,
         ),
       );
       tp.layout();
@@ -643,9 +643,11 @@ class _ChipInputFieldState<T extends Object> extends State<ChipInputField<T>> {
       alignment: Alignment.centerLeft,
       child: Chip(
         key: ValueKey('chip_${widget.itemToString(item)}_$index'),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         avatar: const Icon(
           Icons.drag_handle,
-          size: 22,
+          size: 18,
           color: Color(0xFF388E3C),
         ),
         label: SizedBox(
@@ -656,22 +658,22 @@ class _ChipInputFieldState<T extends Object> extends State<ChipInputField<T>> {
             overflow: TextOverflow.clip,
             style: const TextStyle(
               color: AppColors.textPrimary,
-              fontSize: 15,
+              fontSize: 13,
             ),
           ),
         ),
         deleteIcon: const Icon(
           Icons.close,
-          size: 19,
+          size: 16,
           color: AppColors.error,
         ),
         onDeleted: () => _removeCommittedItem(item),
         backgroundColor: AppColors.surface,
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       ),
     );
   }

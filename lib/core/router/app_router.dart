@@ -12,12 +12,20 @@ class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
+  /// Public accessor for the root navigator so the app-level back-button
+  /// interceptor can pop any open root-navigator modal/dialog.
+  static GlobalKey<NavigatorState> get rootNavigatorKey => _rootNavigatorKey;
+
   static GoRouter router(AuthProvider auth) => GoRouter(
         // Re-evaluate the guard whenever auth state changes (signed in, signed
         // out, or an "Access denied" rejection arrives).
         refreshListenable: auth,
         initialLocation: '/login',
         navigatorKey: _rootNavigatorKey,
+        // Unfocus on every pop so a dialog/screen that is closed does not
+        // re-prime focus (and the software keyboard) on a background
+        // Offstage tab field.
+        observers: [_UnfocusOnPopObserver()],
         redirect: (context, state) {
           final status = auth.status;
           final location = state.matchedLocation;
@@ -77,6 +85,21 @@ class AppRouter {
       ),
     ],
   );
+}
+
+/// Clears the primary focus whenever any route is popped (dialog, screen,
+/// etc.). The shell keeps every visited tab alive via Offstage, so their text
+/// fields remain focusable; without clearing focus the software keyboard
+/// would pop back up right after a modal is closed.
+class _UnfocusOnPopObserver extends NavigatorObserver {
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    // Post-frame so the pop completes before focus is cleared; prevents the
+    // keyboard from re-opening on an Offstage tab field.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
+    });
+  }
 }
 
 class ScaffoldWithNavBar extends StatefulWidget {

@@ -83,7 +83,6 @@ class _EntityCreationModalState extends State<EntityCreationModal> {
               const SizedBox(height: 16),
               TextField(
                 controller: _controller,
-                autofocus: true,
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                 ),

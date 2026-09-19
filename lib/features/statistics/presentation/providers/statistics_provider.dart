@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:music_collection/features/search/data/repositories/search_repository.dart';
 import 'package:music_collection/features/statistics/data/repositories/audit_log_repository.dart';
 import 'package:music_collection/features/statistics/data/repositories/statistics_repository.dart';
@@ -77,6 +78,8 @@ class StatisticsProvider extends ChangeNotifier {
 
   void setSubTab(StatisticsSubTab tab) {
     if (_subTab == tab) return;
+    debugPrint('[StatisticsProvider] setSubTab: ${_subTab.name} -> ${tab.name}');
+    WidgetsBinding.instance.focusManager.primaryFocus?.unfocus();
     _subTab = tab;
     notifyListeners();
   }

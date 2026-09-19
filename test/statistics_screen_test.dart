@@ -185,4 +185,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('STATISTICS'), findsOneWidget);
   });
+
+  testWidgets(
+      'sub-tab switching works at phone size (360x740) with no overflow',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final repo = _FakeRepo(rows: [
+      _row(id: 1, name: 'A'),
+    ]);
+    final logRepo = _FakeLogRepo();
+    final provider = StatisticsProvider(
+      repository: repo,
+      auditLogRepository: logRepo,
+    );
+    await tester.pumpWidget(_host(provider));
+    await provider.load();
+    await tester.pumpAndSettle();
+
+    // Charts tab renders without overflow at phone size.
+    expect(tester.takeException(), isNull);
+    expect(find.text('STATISTICS'), findsOneWidget);
+
+    // Switch to Log at phone size.
+    await tester.tap(find.text('Log'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'Log sub-tab should not overflow at phone size');
+    expect(find.textContaining('Added record "Test Record"'),
+        findsOneWidget);
+
+    // Switch back to charts.
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('STATISTICS'), findsOneWidget);
+  });
 }

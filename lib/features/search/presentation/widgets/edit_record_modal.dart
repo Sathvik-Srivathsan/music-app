@@ -301,8 +301,10 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
           side: const BorderSide(color: AppColors.borderLight)),
-      insetPadding:
-          const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width < 560 ? 12 : 40,
+        vertical: 24,
+      ),
       child: SizedBox(
         width: 920,
         height: MediaQuery.of(context).size.height * 0.88,
@@ -345,171 +347,21 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
-                child: Column(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 640;
+                    return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              _sectionLabel('Record Name *'),
-                              TextField(controller: _nameCtrl),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              _sectionLabel('Status',
-                                  tip: 'Green = Active, gold = Finished. '
-                                      'Click to flip, then press Update.'),
-                              const SizedBox(height: 6),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 42,
-                                child: OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: _statusActive
-                                        ? AppColors.active
-                                            .withOpacity(0.22)
-                                        : AppColors.amberGold
-                                            .withOpacity(0.22),
-                                    side: BorderSide(
-                                      color: _statusActive
-                                          ? AppColors.active
-                                          : AppColors.amberGold,
-                                    ),
-                                  ),
-                                  icon: Icon(
-                                    _statusActive
-                                        ? Icons.play_circle_outline
-                                        : Icons.stop_circle_outlined,
-                                    color: _statusActive
-                                        ? AppColors.active
-                                        : AppColors.amberGold,
-                                    size: 18,
-                                  ),
-                                  label: Text(
-                                    _statusActive ? 'ACTIVE' : 'FINISHED',
-                                    style: TextStyle(
-                                      color: _statusActive
-                                          ? AppColors.active
-                                          : AppColors.amberGold,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.5,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _statusActive = !_statusActive;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              _sectionLabel('Release Date'),
-                              TextField(
-                                controller: _releaseCtrl,
-                                readOnly: false,
-                                decoration: InputDecoration(
-                                  hintText: 'YYYY / YYYY-MM / YYYY-MM-DD',
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(Icons.calendar_today,
-                                        size: 18,
-                                        color: AppColors.textSecondary),
-                                    onPressed: _pickDate,
-                                  ),
-                                ),
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              _sectionLabel('Record Type'),
-                              DropdownButtonFormField<String>(
-                                initialValue: _recordType,
-                                hint: const Text('-',
-                                    style: TextStyle(
-                                        color: AppColors.textHint)),
-                                dropdownColor: AppColors.card,
-                                items: AppConstants.recordTypes
-                                    .map((t) => DropdownMenuItem(
-                                        value: t,
-                                        child: Text(t,
-                                            style: const TextStyle(
-                                                color: AppColors
-                                                    .textPrimary))))
-                                    .toList(),
-                                onChanged: (v) {
-                                  setState(() {
-                                    _recordType = v;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              _sectionLabel('Date Added',
-                                  tip: 'App-generated timestamp - not '
-                                      'editable.'),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: AppColors.inputBackground
-                                      .withOpacity(0.4),
-                                  borderRadius:
-                                      BorderRadius.circular(4),
-                                  border: Border.all(
-                                      color: AppColors.inputBorder),
-                                ),
-                                child: Text(
-                                  widget.details.record.dateAdded ?? '-',
-                                  style: const TextStyle(
-                                      color: AppColors.textHint,
-                                      fontSize: 13),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                    if (compact) ...[
+                      _nameStatusColumn(),
+                      const SizedBox(height: 16),
+                      _dateRowCompact(),
+                    ] else ...[
+                      _nameStatusRow(),
+                      const SizedBox(height: 16),
+                      _dateRow(),
+                    ],
                     const SizedBox(height: 20),
 
                     _sectionLabel('Artists *',
@@ -658,12 +510,193 @@ class _EditRecordDialogState extends State<_EditRecordDialog> {
                           style: const TextStyle(color: AppColors.error)),
                     ],
                   ],
+                );
+                  },
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _nameStatusRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionLabel('Record Name *'),
+              TextField(controller: _nameCtrl),
+            ],
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionLabel('Status',
+                  tip: 'Green = Active, gold = Finished. '
+                      'Click to flip, then press Update.'),
+              const SizedBox(height: 6),
+              _statusButton(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _nameStatusColumn() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel('Record Name *'),
+        TextField(controller: _nameCtrl),
+        const SizedBox(height: 12),
+        _sectionLabel('Status',
+            tip: 'Green = Active, gold = Finished. '
+                'Click to flip, then press Update.'),
+        const SizedBox(height: 6),
+        _statusButton(),
+      ],
+    );
+  }
+
+  Widget _statusButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 42,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: _statusActive
+              ? AppColors.active.withOpacity(0.22)
+              : AppColors.amberGold.withOpacity(0.22),
+          side: BorderSide(
+            color: _statusActive ? AppColors.active : AppColors.amberGold,
+          ),
+        ),
+        icon: Icon(
+          _statusActive ? Icons.play_circle_outline : Icons.stop_circle_outlined,
+          color: _statusActive ? AppColors.active : AppColors.amberGold,
+          size: 18,
+        ),
+        label: Text(
+          _statusActive ? 'ACTIVE' : 'FINISHED',
+          style: TextStyle(
+            color: _statusActive ? AppColors.active : AppColors.amberGold,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.5,
+          ),
+        ),
+        onPressed: () {
+          setState(() {
+            _statusActive = !_statusActive;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _dateRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _releaseDateField()),
+        const SizedBox(width: 24),
+        Expanded(child: _recordTypeField()),
+        const SizedBox(width: 24),
+        Expanded(child: _dateAddedField()),
+      ],
+    );
+  }
+
+  Widget _dateRowCompact() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _releaseDateField(),
+        const SizedBox(height: 12),
+        _recordTypeField(),
+        const SizedBox(height: 12),
+        _dateAddedField(),
+      ],
+    );
+  }
+
+  Widget _releaseDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel('Release Date'),
+        TextField(
+          controller: _releaseCtrl,
+          readOnly: false,
+          decoration: InputDecoration(
+            hintText: 'YYYY / YYYY-MM / YYYY-MM-DD',
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.calendar_today,
+                  size: 18, color: AppColors.textSecondary),
+              onPressed: _pickDate,
+            ),
+          ),
+          style: const TextStyle(fontSize: 13),
+        ),
+      ],
+    );
+  }
+
+  Widget _recordTypeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel('Record Type'),
+        DropdownButtonFormField<String>(
+          initialValue: _recordType,
+          hint: const Text('-', style: TextStyle(color: AppColors.textHint)),
+          dropdownColor: AppColors.card,
+          items: AppConstants.recordTypes
+              .map((t) => DropdownMenuItem(
+                  value: t,
+                  child: Text(t,
+                      style:
+                          const TextStyle(color: AppColors.textPrimary))))
+              .toList(),
+          onChanged: (v) {
+            setState(() {
+              _recordType = v;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _dateAddedField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel('Date Added',
+            tip: 'App-generated timestamp - not editable.'),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.inputBackground.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: AppColors.inputBorder),
+          ),
+          child: Text(
+            widget.details.record.dateAdded ?? '-',
+            style: const TextStyle(color: AppColors.textHint, fontSize: 13),
+          ),
+        ),
+      ],
     );
   }
 

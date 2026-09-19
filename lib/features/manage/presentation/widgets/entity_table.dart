@@ -5,7 +5,7 @@ import 'package:music_collection/features/manage/presentation/providers/manage_p
 import 'package:music_collection/shared/widgets/info_tip.dart';
 import 'package:provider/provider.dart';
 
-class EntityTable<T> extends StatelessWidget {
+class EntityTable<T> extends StatefulWidget {
   final List<EntityWithRefCount<T>> entities;
   final String Function(T) nameExtractor;
   final int Function(T) idExtractor;
@@ -22,16 +22,42 @@ class EntityTable<T> extends StatelessWidget {
   });
 
   @override
+  State<EntityTable<T>> createState() => _EntityTableState<T>();
+}
+
+class _EntityTableState<T> extends State<EntityTable<T>> {
+  final ScrollController _bodyH = ScrollController();
+  final ScrollController _headerH = ScrollController();
+
+  @override
+  void dispose() {
+    _bodyH.dispose();
+    _headerH.dispose();
+    super.dispose();
+  }
+
+  /// Keeps the header row's horizontal offset in lock-step with the body so
+  /// dragging one always moves the other.
+  void _syncHeader(ScrollMetrics metrics) {
+    if (_headerH.hasClients && _headerH.offset != metrics.pixels) {
+      _headerH.jumpTo(metrics.pixels);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final manage = context.watch<ManageProvider>();
+    const minTableWidth = 520.0;
 
-    return Column(
-      children: [
-        _buildHeader(manage),
-        const Divider(color: AppColors.border, height: 1),
-        Expanded(
-          child: entities.isEmpty
-              ? Center(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalW = constraints.maxWidth > minTableWidth
+            ? constraints.maxWidth
+            : minTableWidth;
+        final body = widget.entities.isEmpty
+            ? SizedBox(
+                height: 200,
+                child: Center(
                   child: Text(
                     manage.searchQuery.isNotEmpty
                         ? 'No matches found'
@@ -41,16 +67,40 @@ class EntityTable<T> extends StatelessWidget {
                       fontSize: 14,
                     ),
                   ),
-                )
-              : ListView.builder(
-                  itemCount: entities.length,
-                  itemBuilder: (context, index) {
-                    final entry = entities[index];
-                    return _buildRow(entry);
-                  },
                 ),
-        ),
-      ],
+              )
+            : ListView.builder(
+                itemCount: widget.entities.length,
+                itemBuilder: (context, index) {
+                  final entry = widget.entities[index];
+                  return _buildRow(entry);
+                },
+              );
+
+        return Column(
+          children: [
+            SingleChildScrollView(
+              controller: _headerH,
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(width: totalW, child: _buildHeader(manage)),
+            ),
+            const Divider(color: AppColors.border, height: 1),
+            Expanded(
+              child: NotificationListener<ScrollUpdateNotification>(
+                onNotification: (n) {
+                  _syncHeader(n.metrics);
+                  return false;
+                },
+                child: SingleChildScrollView(
+                  controller: _bodyH,
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(width: totalW, child: body),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -115,12 +165,12 @@ class EntityTable<T> extends StatelessWidget {
               field: EntitySortField.refCount,
               showSortIcon: true,
               enabled: !searchActive,
-              infoBody: showHierarchyColumns
+              infoBody: widget.showHierarchyColumns
                   ? null
                   : 'Number of records directly linked to this entity.',
             ),
           ),
-          if (showHierarchyColumns) ...[
+          if (widget.showHierarchyColumns) ...[
             Expanded(
               flex: 1,
               child: _buildSortHeader(
@@ -150,10 +200,10 @@ class EntityTable<T> extends StatelessWidget {
   }
 
   Widget _buildRow(EntityWithRefCount<T> entry) {
-    final name = nameExtractor(entry.entity);
+    final name = widget.nameExtractor(entry.entity);
 
     return InkWell(
-      onTap: () => onRowTap(entry.entity),
+      onTap: () => widget.onRowTap(entry.entity),
       hoverColor: AppColors.surface,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
@@ -185,7 +235,7 @@ class EntityTable<T> extends StatelessWidget {
                 ),
               ),
             ),
-            if (showHierarchyColumns) ...[
+            if (widget.showHierarchyColumns) ...[
               Expanded(
                 flex: 1,
                 child: Text(

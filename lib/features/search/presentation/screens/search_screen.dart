@@ -576,33 +576,50 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  /// Title row carrying an OR/AND slider switch right next to it.
+  /// Title row carrying an OR/AND slider switch right next to it. For long
+  /// titles (e.g. "Streaming Availability") the switch can be placed on its
+  /// own line below via [switchOnNextLine] so nothing clips.
   Widget _modeTitle(String title, String tip, bool value,
-      ValueChanged<bool> onChanged) {
+      ValueChanged<bool> onChanged,
+      {bool switchOnNextLine = false}) {
+    final switcher = Transform.scale(
+      scale: 0.75,
+      child: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeThumbColor: AppColors.amberGold,
+        activeTrackColor: AppColors.amberGold.withOpacity(0.35),
+        inactiveThumbColor: AppColors.electricBlue,
+        inactiveTrackColor: AppColors.electricBlue.withOpacity(0.25),
+      ),
+    );
+    final modeText = Text(
+      value ? 'ALL' : 'ANY',
+      style: TextStyle(
+        color: value ? AppColors.amberGold : AppColors.electricBlue,
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
+    );
+    final info = InfoTip(body: tip);
+    if (switchOnNextLine) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel(title),
+          const SizedBox(height: 4),
+          Row(mainAxisSize: MainAxisSize.min,
+              children: [switcher, modeText, info]),
+        ],
+      );
+    }
     return Row(
       children: [
-        _sectionLabel(title),
-        Transform.scale(
-          scale: 0.75,
-          child: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.amberGold,
-            activeTrackColor: AppColors.amberGold.withOpacity(0.35),
-            inactiveThumbColor: AppColors.electricBlue,
-            inactiveTrackColor: AppColors.electricBlue.withOpacity(0.25),
-          ),
-        ),
-        Text(
-          value ? 'ALL' : 'ANY',
-          style: TextStyle(
-            color: value ? AppColors.amberGold : AppColors.electricBlue,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-        ),
-        InfoTip(body: tip),
+        Flexible(child: _sectionLabel(title)),
+        switcher,
+        modeText,
+        info,
       ],
     );
   }
@@ -704,6 +721,7 @@ class _SearchScreenState extends State<SearchScreen> {
               'Switch right = EVERY ticked service present.',
           _streamingAll,
           (v) => setState(() => _streamingAll = v),
+          switchOnNextLine: true,
         ),
         Wrap(
           spacing: 4,

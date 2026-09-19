@@ -31,23 +31,16 @@ class ManageTreeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
         // Header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
           child: Row(
             children: [
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.surface,
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.border),
-                ),
-                icon: const Icon(Icons.arrow_back, size: 16),
-                label: const Text('Back to Manage'),
-                onPressed: onBack,
-              ),
+              _SizedBackButton(onTap: onBack),
               const Spacer(),
               Text(title,
                   style: const TextStyle(
@@ -107,6 +100,7 @@ class ManageTreeScreen extends StatelessWidget {
         // Tree content
         Expanded(child: _buildContent()),
       ],
+      ),
     );
   }
 
@@ -217,6 +211,91 @@ class ManageTreeScreen extends StatelessWidget {
         // Children
         if (isExpanded && hasChildren)
           ...node.children.map((child) => _buildNode(child, depth + 1)),
+      ],
+    );
+  }
+}
+
+/// "Back to Manage" button trimmed to ~90% of its natural width while keeping
+/// the same font size and height and always showing the full label. The natural
+/// width is measured from an offstage copy so the visible button can be sized
+/// safely with no feedback loop.
+class _SizedBackButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _SizedBackButton({required this.onTap});
+
+  @override
+  State<_SizedBackButton> createState() => _SizedBackButtonState();
+}
+
+class _SizedBackButtonState extends State<_SizedBackButton> {
+  static const double _shrink = 0.90;
+  static const double _paddingH = 10;
+  static const double _breathing = 8;
+  final GlobalKey _measureKey = GlobalKey();
+  double _naturalWidth = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+  }
+
+  void _measure() {
+    final ctx = _measureKey.currentContext;
+    if (ctx == null || !mounted) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    final w = box?.size.width ?? 0;
+    if (w > 0 && (_naturalWidth - w).abs() > 0.5) {
+      setState(() => _naturalWidth = w);
+    }
+  }
+
+  Widget _button({bool enabled = true}) => ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.border),
+          padding: EdgeInsets.symmetric(horizontal: _paddingH),
+        ),
+        icon: const Icon(Icons.arrow_back, size: 16),
+        label: const Text('Back to Manage'),
+        onPressed: enabled ? widget.onTap : null,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    // The visible button is at most 90% of its natural width, but never
+    // narrower than its content (icon + label + small breathing room) so the
+    // text is always fully visible - no ellipsis/truncation.
+    Widget visible;
+    final w = _naturalWidth;
+    if (w > 0) {
+      final content = w - (_paddingH * 2);
+      final minWidth = content + _breathing;
+      final target = minWidth > w * _shrink ? minWidth : w * _shrink;
+      visible = SizedBox(
+        width: target,
+        child: _button(),
+      );
+    } else {
+      visible = _button();
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Offstage copy with natural (unconstrained) width used only to
+        // measure, so the visible button can be sized safely.
+        Offstage(
+          offstage: true,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 0,
+              child: KeyedSubtree(key: _measureKey, child: _button(enabled: false)),
+            ),
+          ),
+        ),
+        visible,
       ],
     );
   }
