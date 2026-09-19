@@ -46,3 +46,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android sideload deliverable: built APK + debug symbols (E.1)
+/deploy_android/dist/
+/deploy_android/symbols/
+
+# Source app icon (user-provided image; not committed). It is used to
+# regenerate the launcher/web icons (android res/mipmap*, web/icons).
+/assets/icon/
