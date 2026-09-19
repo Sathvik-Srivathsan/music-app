@@ -126,6 +126,40 @@ void main() {
     expect(find.byType(SegmentedButton<ResultBucket>), findsOneWidget);
   });
 
+  test('usedIds include entities referenced only by the non-active bucket', () {
+    final p = SearchProvider()
+      ..allGenres = [
+        Genre(genreId: 1, genreName: 'Jazz'),
+        Genre(genreId: 2, genreName: 'Rock'),
+      ]
+      ..allDescriptors = [
+        Descriptor(descriptorId: 10, descriptorName: 'warm'),
+        Descriptor(descriptorId: 11, descriptorName: 'dark'),
+      ];
+    p.presentRows(rows: [
+      _row(
+        id: 1,
+        name: 'A',
+        genres: [Genre(genreId: 1, genreName: 'Jazz')],
+        descriptors: [Descriptor(descriptorId: 10, descriptorName: 'warm')],
+      ),
+      _row(
+        id: 2,
+        name: 'B',
+        finished: true,
+        genres: [Genre(genreId: 2, genreName: 'Rock')],
+        descriptors: [Descriptor(descriptorId: 11, descriptorName: 'dark')],
+      ),
+    ]);
+    // Default bucket is active; the finished row is NOT in bucketRows, but its
+    // genre/descriptor must still be recommendable in the Search-tab dropdown.
+    expect(p.bucketRows.length, 1);
+    expect(p.usedGenreIds, {1, 2});
+    expect(p.usedDescriptorIds, {10, 11});
+    expect(SearchProvider().usedGenreIds, isEmpty);
+    expect(SearchProvider().usedDescriptorIds, isEmpty);
+  });
+
   testWidgets('grouped mode with bands renders', (tester) async {
     final p = SearchProvider()
       ..presentRows(rows: _rows())
@@ -815,22 +849,34 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  // ── Fix 2: Scroll pill improvements ───────────────────────────
+  // ── Fix 2: Horizontal scroll indicator (draggable scrollbar, no pills) ────
 
-  testWidgets('right scroll pill appears in scroll mode and has correct label',
+  testWidgets('scroll mode shows a draggable horizontal scrollbar, no pills',
       (tester) async {
-    await useSurface(tester, const Size(700, 900));
+    await useSurface(tester, const Size(500, 900));
     final p = SearchProvider()..presentRows(rows: _rows());
-    await tester.pumpWidget(_host(p, size: const Size(700, 900)));
+    // Enable enough columns that the table must scroll horizontally at 500dp.
+    for (final f in [
+      'type',
+      'releaseDate',
+      'dateAdded',
+      'streaming',
+      'comments',
+      'descriptors',
+      'genres',
+    ]) {
+      p.setColumnVisible(f, true);
+    }
+    await tester.pumpWidget(_host(p, size: const Size(500, 900)));
     await tester.pumpAndSettle();
 
-    // In narrow mode, enough cols should be hidden to trigger the pill.
-    // Look for "Scroll for →" text.
-    final pillFinder = find.textContaining('Scroll for →');
-    if (pillFinder.evaluate().isNotEmpty) {
-      expect(pillFinder, findsOneWidget);
-    }
-    // Left pill should NOT exist.
+    // The old "Scroll for →" / "←" pill indicators are gone entirely.
+    expect(find.textContaining('Scroll for →'), findsNothing);
     expect(find.textContaining('←'), findsNothing);
+    // A real, draggable (interactive) horizontal scrollbar replaces the pills.
+    expect(
+      find.byWidgetPredicate((w) => w is Scrollbar && w.interactive == true),
+      findsOneWidget,
+    );
   });
 }

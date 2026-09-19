@@ -275,10 +275,15 @@ class SearchProvider extends ChangeNotifier
   @override
   void setSearchFilterField(String? field) {}
 
-  // Used-genre/descriptor IDs for chip dropdown filtering (Search tab)
+  // Used-genre/descriptor IDs for chip dropdown filtering (Search tab).
+  // Derived from the FULL loaded record set (every record, both buckets,
+  // not just the current bucket's rows), so a genre/descriptor referenced
+  // by ANY record anywhere is recommendable - regardless of the last
+  // search's bucket or how few results it matched. When nothing has been
+  // loaded yet, fall back to the complete entity lists.
   Set<int> get usedGenreIds {
-    final source = bucketRows;
-    if (source.isEmpty && _allRecords.isEmpty) {
+    final source = _allRecords;
+    if (source.isEmpty) {
       return {for (final g in allGenres) g.genreId!};
     }
     final ids = <int>{};
@@ -291,8 +296,8 @@ class SearchProvider extends ChangeNotifier
   }
 
   Set<int> get usedDescriptorIds {
-    final source = bucketRows;
-    if (source.isEmpty && _allRecords.isEmpty) {
+    final source = _allRecords;
+    if (source.isEmpty) {
       return {for (final d in allDescriptors) d.descriptorId!};
     }
     final ids = <int>{};

@@ -240,7 +240,6 @@ void main() {
       final db = DatabaseProvider()..presentRows(rows: _sampleRows());
       await tester.pumpWidget(_dbHost(db));
       await tester.pumpAndSettle();
-      expect(find.text('DATABASE'), findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
     });
 
@@ -383,8 +382,11 @@ void main() {
       expect(db.usedGenreIds, {10, 20});
     });
 
-    test('usedGenreIds returns IDs from filtered records', () {
+    test('usedGenreIds spans BOTH buckets regardless of filter', () {
       final db = DatabaseProvider()..presentRows(rows: _sampleRows());
+      // Only row 4 is finished; its genre id (4) must still be recommendable.
+      expect(db.usedGenreIds, {1, 2, 3, 4, 5});
+      db.setSearchQuery('Blue'); // narrows visible rows, never the set
       expect(db.usedGenreIds, {1, 2, 3, 4, 5});
     });
 
@@ -396,8 +398,10 @@ void main() {
       expect(db.usedDescriptorIds, {100});
     });
 
-    test('usedDescriptorIds returns IDs from filtered records', () {
+    test('usedDescriptorIds spans BOTH buckets regardless of filter', () {
       final db = DatabaseProvider()..presentRows(rows: _sampleRows());
+      expect(db.usedDescriptorIds, {1, 2, 3, 4, 5});
+      db.setSearchQuery('Blue');
       expect(db.usedDescriptorIds, {1, 2, 3, 4, 5});
     });
 

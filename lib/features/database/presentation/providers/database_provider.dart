@@ -315,8 +315,8 @@ class DatabaseProvider extends ChangeNotifier
   // ── Used genre/descriptor IDs for chip filtering ──────────────
 
   Set<int> get usedGenreIds {
-    final source = _filteredRecords;
-    if (source.isEmpty && _allRecords.isEmpty) {
+    final source = _allRecords;
+    if (source.isEmpty) {
       return {for (final g in allGenres) if (g.genreId != null) g.genreId!};
     }
     final ids = <int>{};
@@ -329,8 +329,8 @@ class DatabaseProvider extends ChangeNotifier
   }
 
   Set<int> get usedDescriptorIds {
-    final source = _filteredRecords;
-    if (source.isEmpty && _allRecords.isEmpty) {
+    final source = _allRecords;
+    if (source.isEmpty) {
       return {
         for (final d in allDescriptors)
           if (d.descriptorId != null) d.descriptorId!
