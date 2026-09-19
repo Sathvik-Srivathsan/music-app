@@ -92,6 +92,11 @@ class AuthProvider extends ChangeNotifier {
       // as the callback (see the Dashboard URL Configuration step).
       await SupabaseService.auth.signInWithOAuth(
         OAuthProvider.github,
+        // On web use the configured Site URL as the callback. On Android the
+        // call must return into the app through the custom deep-link scheme
+        // (registered in android/.../AndroidManifest.xml) so the AppLinks
+        // plugin delivers it back to Dart.
+        redirectTo: kIsWeb ? null : 'musicdb://login/callback',
         authScreenLaunchMode: kIsWeb
             ? LaunchMode.platformDefault
             : LaunchMode.externalApplication,

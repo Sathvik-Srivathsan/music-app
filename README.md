@@ -3,8 +3,12 @@
 A Flutter music collection manager. Users maintain a catalogue of records
 (albums/releases), linked to artists, genres, and descriptors. The app talks
 directly to a Supabase backend using the public publishable key, so there is
-**no own server** — this project produces a static Flutter **web** build that
-is deployed to Vercel.
+**no own server**. The same codebase produces two deliverables:
+
+- a static Flutter **web** build deployed to Vercel (see "Deploy to Vercel"), and
+- self-signed **Android** APKs for sideloading (see
+  [`deploy_android/BUILD_APK.md`](deploy_android/BUILD_APK.md) — the link to the
+  dedicated Android build guide).
 
 > **No RLS is currently enabled.** Access is governed by broad grants to the
 > `anon` / `authenticated` / `service_role` roles (see `database/schema.sql`).
@@ -25,6 +29,25 @@ is deployed to Vercel.
 - [Flutter](https://flutter.dev/) web (compiled with `flutter build web --release`)
 - [Supabase](https://supabase.com/) (Postgres)
 - Deployed to [Vercel](https://vercel.com/) (auto-deploy on push to `main`)
+
+## Android app (mobile / sideload)
+
+The app also builds as native Android APKs for sideloading (self-signed; no
+Play Store). These are built separately from the web deploy and are kept out of
+source control (`deploy_android/dist/` and `deploy_android/symbols/` are
+git-ignored build artifacts).
+
+- One command builds **both** the 32-bit `armeabi-v7a` and 64-bit `arm64-v8a`
+  release APKs with a 75 MB size guard:
+  `deploy_android\build_apk.bat`
+- See the **dedicated guide: [`deploy_android/BUILD_APK.md`](deploy_android/BUILD_APK.md)**
+  — clone-and-build setup, which ABI to pick for a given phone, OAuth `musicdb://`
+  deep-link config, and sideloading steps.
+- The launcher + web icons are bundled (generated from a git-ignored source
+  image in `assets/icon/`); see BUILD_APK.md → "App icon".
+
+Creating a publishable key, pointing Vercel/Supabase at the web deploy, and the
+owner-gate hook are the same backend steps for both targets (see below).
 
 ## Configuration (no secrets in the repo)
 
@@ -76,7 +99,8 @@ two complementary layers:
 - **Server gate (Supabase Dashboard, NOT in the repo):** the
   `before-user-created` Auth Hook (a Postgres function created in the Dashboard)
   rejects any GitHub account that is not the configured owner (403). The owner
-  is identified by the **GitHub `provider_id`** (the `sub` in `identity_data`),
+  is identified by the **GitHub numeric id** (the `sub` under
+  `user_metadata`, not `identities` — that array is empty at hook time),
   never by email/username. The owner id lives **only** in the Dashboard
   function — it is intentionally not committed.
 
@@ -95,7 +119,8 @@ Auth wiring notes (developer-relevant):
   anonymous reads remain `apikey`-only while authenticated requests keep their
   session token.
 - The Dashboard steps (GitHub provider, URL config, `before-user-created`
-  hook) are documented in `phase 6 deployment/PHASE6_DEPLOYMENT_TECHNICAL_DOCUMENTATION.txt`.
+  hook) are the only out-of-repo pieces; see "First-time setup" below for the
+  parts automated in this repo.
 
 ### CLI tools
 
@@ -125,7 +150,11 @@ Diagnostic / verification scripts live in `tools/`.
 
 ## Tests
 
-The test suite lives in `test/`:
+Hermetic suite (no real network/Supabase) — **304 tests** across `test/`
+(app logic + widget tests) and `test/android/` (Android-specific behavior,
+e.g. the system-back-button regression that mocks `SystemChannels.platform`).
+See **[TESTING.md](TESTING.md)** for run commands, file-by-file coverage, and
+conventions.
 
 ```bash
 flutter test
@@ -214,6 +243,3 @@ Earlier builds used `SUPABASE_ANON_KEY`; the repo has since migrated to
   simply no longer consumed. Add `SUPABASE_PUBLISHABLE_KEY` and, once the
   publishable deploy is confirmed working, you can deactivate the legacy `anon`
   key in the Supabase Dashboard.
-
-See `phase 6 deployment/PHASE6_DEPLOYMENT_TECHNICAL_DOCUMENTATION.txt` for the
-full git + Vercel deployment write-up and troubleshooting.

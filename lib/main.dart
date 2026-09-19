@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:music_collection/core/widgets/fatal_error_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:music_collection/app.dart';
 import 'package:music_collection/core/constants/app_constants.dart';
@@ -24,20 +25,33 @@ void main() async {
   final url = AppEnv.supabaseUrl;
   final publishableKey = AppEnv.publishableKey;
 
-  await Supabase.initialize(
-    // The publishable (formerly "anon") key is used for client-side apps and is
-    // safe to ship to the browser. Never use the secret/service_role key here.
-    url: url ?? '',
-    publishableKey: publishableKey ?? '',
-    // x-device is static per platform and is read by the audit-log trigger to
-    // stamp every logged write with the device it originated from.
-    headers: {'x-device': device},
-    // The publishable key (sb_publishable_...) is not a JWT, so it must never
-    // be sent as `Authorization: Bearer`. This app is anonymous (no user JWT),
-    // so stripping that header leaves auth to the `apikey` header alone, which
-    // is the supported shape for new-format keys. See PublishableKeyHttpClient.
-    httpClient: PublishableKeyHttpClient(),
-  );
+  try {
+    await Supabase.initialize(
+      // The publishable (formerly "anon") key is used for client-side apps and is
+      // safe to ship to the browser. Never use the secret/service_role key here.
+      url: url ?? '',
+      publishableKey: publishableKey ?? '',
+      // x-device is static per platform and is read by the audit-log trigger to
+      // stamp every logged write with the device it originated from.
+      headers: {'x-device': device},
+      // The publishable key (sb_publishable_...) is not a JWT, so it must never
+      // be sent as `Authorization: Bearer`. This app is anonymous (no user JWT),
+      // so stripping that header leaves auth to the `apikey` header alone, which
+      // is the supported shape for new-format keys. See PublishableKeyHttpClient.
+      httpClient: PublishableKeyHttpClient(),
+    );
+  } catch (e) {
+    // A network/config failure here used to crash before the UI ever appeared
+    // ("app won't open"). Surface a friendly, replayable error screen instead.
+    runApp(
+      FatalErrorScreen(
+        message:
+            'Could not connect to the server.\n\nPlease check your network '
+            'connection and try again.',
+      ),
+    );
+    return;
+  }
 
   await _logAppBoot(device);
 
