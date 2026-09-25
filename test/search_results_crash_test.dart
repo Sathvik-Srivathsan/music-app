@@ -87,10 +87,11 @@ Widget _host(SearchProvider p, {Size size = const Size(1400, 900)}) {
 
 void main() {
   Future<void> useSurface(WidgetTester tester, Size logical) async {
-    tester.view.physicalSize =
-        Size(logical.width * tester.view.devicePixelRatio,
-            logical.height * tester.view.devicePixelRatio);
+    // DPR first: physical pixels then equal logical pixels, so the pumped
+    // surface is exactly `logical` (the ambient test DPR is 3.0, and scaling
+    // by it would triple every requested size).
     tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = logical;
     addTearDown(tester.view.reset);
   }
 

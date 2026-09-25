@@ -117,12 +117,15 @@ class _EntityTableState<T> extends State<EntityTable<T>> {
       onTap: enabled ? () => manage.setSortField(field) : null,
       child: Row(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: enabled ? AppColors.textSecondary : AppColors.textHint,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: enabled ? AppColors.textSecondary : AppColors.textHint,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           if (isActive) ...[

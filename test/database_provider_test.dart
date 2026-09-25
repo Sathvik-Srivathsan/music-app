@@ -71,10 +71,11 @@ Widget _dbHost(DatabaseProvider db) {
 }
 
 Future<void> _useSurface(WidgetTester tester, Size logical) async {
-  tester.view.physicalSize = Size(
-      logical.width * tester.view.devicePixelRatio,
-      logical.height * tester.view.devicePixelRatio);
+  // DPR first: physical pixels then equal logical pixels, so the pumped
+  // surface is exactly `logical` (the ambient test DPR is 3.0, and scaling
+  // by it would triple every requested size).
   tester.view.devicePixelRatio = 1.0;
+  tester.view.physicalSize = logical;
   addTearDown(tester.view.reset);
 }
 
@@ -241,6 +242,29 @@ void main() {
       await tester.pumpWidget(_dbHost(db));
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('wide: classic search row with DATABASE heading', (tester) async {
+      await _useSurface(tester, const Size(1400, 900));
+      final db = DatabaseProvider()..presentRows(rows: _sampleRows());
+      await tester.pumpWidget(_dbHost(db));
+      await tester.pumpAndSettle();
+      expect(find.text('DATABASE'), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('narrow: compact search row, no DATABASE heading', (tester) async {
+      await _useSurface(tester, const Size(500, 900));
+      final db = DatabaseProvider()..presentRows(rows: _sampleRows());
+      await tester.pumpWidget(_dbHost(db));
+      await tester.pumpAndSettle();
+      expect(find.text('DATABASE'), findsNothing);
+      expect(find.byType(TextField), findsOneWidget);
+      // Refresh leaves the search row for the Active/Finished toggle line.
+      expect(
+        find.widgetWithIcon(IconButton, Icons.refresh),
+        findsOneWidget,
+      );
     });
 
     testWidgets('records found label shows correct count', (tester) async {

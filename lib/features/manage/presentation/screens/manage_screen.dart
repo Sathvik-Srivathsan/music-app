@@ -23,6 +23,22 @@ class ManageScreen extends StatefulWidget {
 class _ManageScreenState extends State<ManageScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
 
+  /// Width below which the toolbar stacks: a full-width search row, then
+  /// a refresh + Add row. Measured from content (~470): search minimum
+  /// (~180) + tips (~80) + refresh (48) + Add (~100) + gaps/padding (~60).
+  /// A single fixed threshold keeps the layout stable while typing.
+  static const double _toolbarCompactThreshold = 600;
+
+  /// Width below which the sub-tab bar switches from a 4-segment control
+  /// to a dropdown: the four labels need ~660px and cannot fit side by
+  /// side on a phone portrait (a fixed-width box would clip off-screen).
+  /// Measured from content: segments (~660) + tip (~40) + padding (~80).
+  static const double _subTabCompactThreshold = 780;
+
+  /// Cap for the wide sub-tab control so it does not stretch edge to edge
+  /// on desktop. Sized so the segments fit: 720 - tip (~40) = 680 >= 660.
+  static const double _subTabMaxWidth = 720;
+
   @override
   void initState() {
     super.initState();
@@ -212,8 +228,19 @@ class _ManageScreenState extends State<ManageScreen> {
               if (manage.subTab != ManageSubTab.importExport) ...[
                 if (manage.view == ManageView.table) ...[
                   _buildTreeButton(manage),
-                  _buildSearchBar(manage),
-                  _buildActionsRow(manage),
+                  LayoutBuilder(
+                    builder: (context, cons) {
+                      if (cons.maxWidth < _toolbarCompactThreshold) {
+                        return Column(
+                          children: [
+                            _buildSearchBar(manage),
+                            _buildActionsRow(manage),
+                          ],
+                        );
+                      }
+                      return _buildToolbar(manage);
+                    },
+                  ),
                 ],
                 Expanded(
                   child: manage.view == ManageView.table
@@ -232,47 +259,108 @@ class _ManageScreenState extends State<ManageScreen> {
 
   Widget _buildSubTabBar(ManageProvider manage) {
     const labelStyle = TextStyle(fontWeight: FontWeight.w600, fontSize: 13);
+    const tipBody =
+        'Switch between Artists, Genres, Descriptors, and Import/Export.\n\nEach sub-tab manages a different entity type. Import/Export lets you download or upload CSV files.';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-      child: Center(
-        child: SizedBox(
-          width: 680,
-          child: Row(
-            children: [
-              Expanded(
-                child: SegmentedButton<ManageSubTab>(
-                  segments: const [
-                    ButtonSegment(
-                        value: ManageSubTab.artists,
-                        label: Text('Artists', style: labelStyle)),
-                    ButtonSegment(
-                        value: ManageSubTab.genres,
-                        label: Text('Genres', style: labelStyle)),
-                    ButtonSegment(
-                        value: ManageSubTab.descriptors,
-                        label: Text('Descriptors', style: labelStyle)),
-                    ButtonSegment(
-                        value: ManageSubTab.importExport,
-                        label: Text('Import/Export', style: labelStyle)),
-                  ],
-                  selected: {manage.subTab},
-                  onSelectionChanged: (s) {
-                    manage.setSubTab(s.first);
-                    _searchCtrl.clear();
-                  },
-                  style: SegmentedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    selectedForegroundColor: AppColors.background,
-                    selectedBackgroundColor: AppColors.electricBlue,
+      child: LayoutBuilder(
+        builder: (context, cons) {
+          if (cons.maxWidth < _subTabCompactThreshold) {
+            return Row(
+              children: [
+                Expanded(
+                  child: DropdownButton<ManageSubTab>(
+                    value: manage.subTab,
+                    isExpanded: true,
+                    dropdownColor: AppColors.background,
+                    style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600),
+                    items: const [
+                      DropdownMenuItem(
+                          value: ManageSubTab.artists,
+                          child: Text('Artists', style: labelStyle)),
+                      DropdownMenuItem(
+                          value: ManageSubTab.genres,
+                          child: Text('Genres', style: labelStyle)),
+                      DropdownMenuItem(
+                          value: ManageSubTab.descriptors,
+                          child: Text('Descriptors', style: labelStyle)),
+                      DropdownMenuItem(
+                          value: ManageSubTab.importExport,
+                          child: Text('Import/Export', style: labelStyle)),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      manage.setSubTab(v);
+                      _searchCtrl.clear();
+                    },
                   ),
                 ),
+                const InfoTip(body: tipBody),
+              ],
+            );
+          }
+          return Center(
+            child: ConstrainedBox(
+              constraints:
+                  const BoxConstraints(maxWidth: _subTabMaxWidth),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SegmentedButton<ManageSubTab>(
+                      segments: const [
+                        ButtonSegment(
+                            value: ManageSubTab.artists,
+                            label: Text('Artists', style: labelStyle)),
+                        ButtonSegment(
+                            value: ManageSubTab.genres,
+                            label: Text('Genres', style: labelStyle)),
+                        ButtonSegment(
+                            value: ManageSubTab.descriptors,
+                            label: Text('Descriptors', style: labelStyle)),
+                        ButtonSegment(
+                            value: ManageSubTab.importExport,
+                            label: Text('Import/Export', style: labelStyle)),
+                      ],
+                      selected: {manage.subTab},
+                      onSelectionChanged: (s) {
+                        manage.setSubTab(s.first);
+                        _searchCtrl.clear();
+                      },
+                      style: SegmentedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        selectedForegroundColor: AppColors.background,
+                        selectedBackgroundColor: AppColors.electricBlue,
+                      ),
+                    ),
+                  ),
+                  const InfoTip(body: tipBody),
+                ],
               ),
-              const InfoTip(
-                  body:
-                      'Switch between Artists, Genres, Descriptors, and Import/Export.\n\nEach sub-tab manages a different entity type. Import/Export lets you download or upload CSV files.'),
-            ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildToolbar(ManageProvider manage) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSearchField(manage),
           ),
-        ),
+          const InfoTip(body: _searchInfo),
+          const SizedBox(width: 12),
+          _buildRefreshButton(manage),
+          const SizedBox(width: 4),
+          _buildAddButton(),
+          InfoTip(body: _addInfo(manage.subTab)),
+        ],
       ),
     );
   }
@@ -283,33 +371,7 @@ class _ManageScreenState extends State<ManageScreen> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: InputDecoration(
-                hintText: 'Search...',
-                prefixIcon: const Icon(Icons.search,
-                    size: 18, color: AppColors.textHint),
-                suffixIcon: _searchCtrl.text.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.close,
-                            size: 18, color: AppColors.textSecondary),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          manage.setSearchQuery('');
-                        },
-                      ),
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              ),
-              style:
-                  const TextStyle(color: AppColors.textPrimary, fontSize: 13),
-              onChanged: (v) {
-                manage.setSearchQuery(v);
-                setState(() {});
-              },
-            ),
+            child: _buildSearchField(manage),
           ),
           const InfoTip(body: _searchInfo),
         ],
@@ -322,26 +384,62 @@ class _ManageScreenState extends State<ManageScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
       child: Row(
         children: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: manage.isLoading ? null : () => manage.loadAll(),
-            icon: const Icon(Icons.refresh, color: AppColors.electricBlue),
-          ),
+          _buildRefreshButton(manage),
           const SizedBox(width: 4),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.electricBlue,
-            ),
-            icon: const Icon(Icons.add,
-                size: 18, color: AppColors.background),
-            label: const Text('Add',
-                style: TextStyle(color: AppColors.background)),
-            onPressed: _onAdd,
-          ),
+          _buildAddButton(),
           InfoTip(body: _addInfo(manage.subTab)),
           const Spacer(),
         ],
       ),
+    );
+  }
+
+  Widget _buildSearchField(ManageProvider manage) {
+    return TextField(
+      controller: _searchCtrl,
+      decoration: InputDecoration(
+        hintText: 'Search...',
+        prefixIcon:
+            const Icon(Icons.search, size: 18, color: AppColors.textHint),
+        suffixIcon: _searchCtrl.text.isEmpty
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.close,
+                    size: 18, color: AppColors.textSecondary),
+                onPressed: () {
+                  _searchCtrl.clear();
+                  manage.setSearchQuery('');
+                },
+              ),
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ),
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+      onChanged: (v) {
+        manage.setSearchQuery(v);
+        setState(() {});
+      },
+    );
+  }
+
+  Widget _buildRefreshButton(ManageProvider manage) {
+    return IconButton(
+      tooltip: 'Refresh',
+      onPressed: manage.isLoading ? null : () => manage.loadAll(),
+      icon: const Icon(Icons.refresh, color: AppColors.electricBlue),
+    );
+  }
+
+  Widget _buildAddButton() {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.electricBlue,
+      ),
+      icon: const Icon(Icons.add, size: 18, color: AppColors.background),
+      label:
+          const Text('Add', style: TextStyle(color: AppColors.background)),
+      onPressed: _onAdd,
     );
   }
 
